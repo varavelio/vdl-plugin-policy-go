@@ -6,10 +6,10 @@
   />
 </p>
 
-<h1 align="center">VDL Plugin Template</h1>
+<h1 align="center">VDL Go Policy Plugin</h1>
 
 <p align="center">
-  Starter template for building a VDL plugin in TypeScript.
+  Generate Go <strong>policy checks</strong> and a centralized <strong>policy catalog</strong> from VDL <code>@policy</code> types.
 </p>
 
 <p align="center">
@@ -27,126 +27,227 @@
   </a>
 </p>
 
-## What is included
+<p align="center">
+  Strictly follows <a href="https://vdl.varavel.com/docs/protocols/policy/">VPP-3: Policy</a>.
+</p>
 
-It includes the VDL plugin SDK, a small code generator, formatting and linting tools, a test setup, an included devcontainer, and a GitHub Actions workflow so you can go from idea to releasable plugin quickly.
+This plugin is policy-focused.
 
-- `src/index.ts` with a minimal `definePlugin(...)` entrypoint.
-- [`@varavel/vdl-plugin-sdk`](https://github.com/varavelio/vdl-plugin-sdk) for typed plugin input/output, typed VDL IR, option helpers, and the `vdl-plugin` build/check CLI.
-- [`@varavel/gen`](https://github.com/varavelio/gen-ts) to make string-based code generation easier.
-- TypeScript configuration ready to go based on `@varavel/vdl-plugin-sdk/tsconfig.base.json`.
-- `Biome` and `dprint` for linting and formatting.
-- `Vitest` for tests.
-- A ready-to-use `.devcontainer/` with Node 26, useful CLI tools, and VS Code extensions for VDL, Biome, dprint, and Vitest.
-- A GitHub Actions workflow in `.github/workflows/ci.yaml` that runs `npm run ci` on pushes, pull requests, and manual triggers.
+It only generates code for types annotated with `@policy`. Unannotated types are ignored.
 
-## Project layout
+It does **not** generate Go payload models (types/enums). Payload contracts are delegated to [`varavelio/vdl-plugin-go`](https://github.com/varavelio/vdl-plugin-go).
 
-- `.devcontainer/` reproducible development environment.
-- `.github/workflows/ci.yaml` CI pipeline.
-- `biome.json` JavaScript and TypeScript formatting/lint rules.
-- `dprint.json` formatting for Markdown, JSON, and YAML.
-- `src/index.ts` plugin source.
-- `dist/index.js` built plugin bundle consumed by VDL from GitHub releases.
+Use it when you want to:
 
-## Getting started
+- generate pure boolean checks for authorization decisions
+- keep allow and deny rules synchronized from one VDL source of truth
+- call the same decision from RPC handlers, jobs, and UI flows
+- expose a small runtime policy catalog for dispatching or introspection
 
-1. Use this repository as a template.
-2. Install dependencies:
+## Quick Start
 
-```bash
-npm install
-```
-
-3. Implement your plugin in `src/index.ts`.
-4. Run `npm run check` while iterating.
-5. Run `npm run build` to produce `dist/index.js`.
-
-Your plugin entrypoint receives:
-
-- `input.version` the VDL version.
-- `input.options` plugin options from `vdl.config.vdl`.
-- `input.ir` the fully prepared VDL IR used to generate files.
-
-Your plugin returns generated `files`, and it can also return `errors` when generation should stop.
-
-## NPM scripts
-
-- `npm run build` bundles `src/index.ts` into `dist/index.js`.
-- `npm run check` runs TypeScript type checks for the plugin.
-- `npm run format` formats the repository using dprint and Biome.
-- `npm run lint` validates formatting and lint rules using dprint and Biome.
-- `npm run test` runs the Vitest suite. It is configured to pass even if you have not added tests yet.
-- `npm run ci` runs the full verification flow: lint, type-check, test, and build.
-
-## Code generation
-
-This template already includes [`@varavel/gen`](https://www.npmjs.com/package/@varavel/gen).
-
-It is useful when you want to build generated files with predictable indentation and block structure instead of manually concatenating strings.
-
-```ts
-import { newGenerator } from "@varavel/gen";
-
-const g = newGenerator();
-
-g.line("export interface User {");
-g.block(() => {
-  g.line("id: string;");
-  g.line("name: string;");
-});
-g.line("}");
-
-const content = g.toString();
-```
-
-If you want real plugin examples, here is the code for two official plugins:
-
-- [`varavelio/vdl-plugin-go`](https://github.com/varavelio/vdl-plugin-go)
-- [`varavelio/vdl-plugin-ts`](https://github.com/varavelio/vdl-plugin-ts)
-
-## Devcontainer and CI
-
-The included devcontainer installs dependencies on creation and gives you a consistent environment with the expected tooling already configured.
-
-If you want to use it, check the [Dev Containers documentation](https://code.visualstudio.com/docs/devcontainers/containers). You need Docker and VS Code (or fork like cursor, antigravity, etc), and using them is strongly recommended because they remove most local setup friction and make the development workflow much easier.
-
-The GitHub workflow uses the devcontainer in CI as well (without you having to do anything extra), so local development and CI stay aligned.
-
-## Releasing and deployment
-
-VDL plugins do not need to be published to npm.
-
-Release flow:
-
-1. Build your plugin with `npm run build`.
-2. Commit your source code and the generated `dist/index.js` file.
-3. Create a GitHub release with a tag such as `v0.1.0` after `dist/index.js` is already committed.
-4. That is enough for VDL users to consume the plugin from GitHub.
-
-This template intentionally keeps `dist/` out of `.gitignore` because `dist/index.js` is part of the distributable plugin.
-
-Example plugin reference in VDL config (`vdl.config.vdl`):
+1. Generate your Go payload types with `varavelio/vdl-plugin-go`.
+2. Add this plugin to your `vdl.config.vdl` for policy checks:
 
 ```vdl
 const config = {
   version 1
   plugins [
     {
-      src "varavelio/vdl-plugin-go@v0.1.0" // GitHub username/repo@version
+      src "varavelio/vdl-plugin-go@<version>" // Use a version from plugin releases
       schema "./schema.vdl"
-      outDir "./gen/go"
+      outDir "./types"
       options {
-        // Additional options for the plugin can be specified here
+        package "types"
+      }
+    }
+    {
+      src "varavelio/vdl-plugin-policy-go@<version>" // Use a version from plugin releases
+      schema "./schema.vdl"
+      outDir "./policy"
+      options {
+        package "policy"
+        typesImport "example.com/project/types"
       }
     }
   ]
 }
 ```
 
-## License note
+3. Run your normal VDL generation command:
 
-Using MIT for your plugin is not mandatory, but it is strongly appreciated. A permissive license makes it easier for more people to adopt, study, improve, and contribute back to the ecosystem, which helps everyone benefit from better VDL plugins.
+```bash
+vdl generate
+```
+
+4. Check the generated output in `./policy`:
+
+## Plugin Options
+
+| Option        | Required | Default         | Meaning                                                                                               |
+| ------------- | -------- | --------------- | ----------------------------------------------------------------------------------------------------- |
+| `package`     | no       | `"policy"`      | Go package name used in the generated file.                                                           |
+| `outFile`     | no       | `"policies.go"` | Generated Go filename inside `outDir`. The file must end with `.go`.                                  |
+| `typesImport` | no       | `""`            | Import path of the types package. Empty means the policy code lives in the same package as the types. |
+
+When `typesImport` is set, model references are qualified as `vdltypes.ModelName` and imported as `vdltypes "<path>"`.
+
+Example with all options:
+
+```vdl
+const config = {
+  version 1
+  plugins [
+    {
+      src "varavelio/vdl-plugin-policy-go@<version>" // Use a version from plugin releases
+      schema "./schema.vdl"
+      outDir "./gen"
+      options {
+        package "audit"
+        outFile "audit_policies.go"
+        typesImport "example.com/project/types"
+      }
+    }
+  ]
+}
+```
+
+## Policy Annotation Model
+
+This plugin follows the VDL `@policy` specification (VPP-3):
+
+- Spec: https://vdl.varavel.com/docs/protocols/policy/
+
+Core rules enforced by the SDK validation used here:
+
+- `@policy({ allow, deny?, version? })` must be attached to a top-level object type
+- `allow` is required and non-empty, `deny` is optional and non-empty when present
+- policy fields must be `principal`, then `resource`, then `context`, all required when present
+- each root must reference a named VDL object type
+- expressions only use declared roots with typed field paths
+- every expression must evaluate to `bool` with explicit `has()` guards for optional access
+
+Example:
+
+```vdl
+type User {
+  id string
+  role string
+  department? string
+  disabled bool
+}
+
+@policy({
+  version 1
+  allow "principal.id == resource.ownerId || has(principal.department) && principal.department == 'Finance'"
+  deny "principal.disabled == true"
+})
+type CanApproveInvoice {
+  principal User
+  resource Invoice
+}
+```
+
+## What You Get
+
+- One exported function per policy: `CanApproveInvoice(principal User, resource Invoice) bool`
+- `VDLPolicyCatalog`: top-level struct grouping per-policy anonymous structs
+- `VDLPolicies`: variable holding the fully typed policy catalog with `Check` function references
+- `Names()`: method returning every policy name in sorted order
+
+All generated policies are consolidated into a single Go file.
+
+## Generated Go Shape
+
+Given this schema:
+
+```vdl
+@policy({
+  allow "principal.role == 'admin'"
+})
+type CanAccessPanel {
+  principal User
+}
+```
+
+The generated Go output is similar to (comments were reduced for brevity):
+
+```go
+func CanAccessPanel(principal vdltypes.User) bool {
+  return (principal.Role == "admin")
+}
+
+type VDLPolicyCatalog struct {
+  CanAccessPanel struct {
+    Name string
+    Check func(vdltypes.User) bool
+  }
+}
+
+var VDLPolicies = VDLPolicyCatalog{
+  CanAccessPanel: struct {
+    Name string
+    Check func(vdltypes.User) bool
+  }{
+    Name: "CanAccessPanel",
+    Check: CanAccessPanel,
+  },
+}
+
+func (c VDLPolicyCatalog) Names() []string {
+  return []string{"CanAccessPanel"}
+}
+```
+
+Each function evaluates `deny` first and returns `false` immediately, then returns `allow`. Direct calls are the primary API, the catalog only references the same functions for inventory and dynamic dispatch:
+
+```go
+gen.CanAccessPanel(user)
+gen.VDLPolicies.CanAccessPanel.Check(user)
+gen.VDLPolicies.Names()
+```
+
+## Type Mapping
+
+| VDL        | Go output   |
+| ---------- | ----------- |
+| `string`   | `string`    |
+| `int`      | `int64`     |
+| `float`    | `float64`   |
+| `bool`     | `bool`      |
+| `datetime` | `time.Time` |
+
+Named field, type, and enum member names follow `vdl-plugin-go` PascalCase rules. Optional VDL fields are expected as Go pointers with nil checks.
+
+## Expression Behavior
+
+- `&&`, `||`, and `!` map directly with explicit parentheses.
+- `==` and `!=` are null-safe: missing optional values fail `==` and pass `!=`.
+- `>`, `>=`, `<`, and `<=` use native operators, except `datetime` which uses `Before`, `After`, and `Equal`.
+- `in` with a literal list expands to an `||` chain without extra imports.
+- `in` with a field reference uses `slices.Contains`, imported only when needed.
+- `has(ref)` expands to a nil chain for optional segments.
+- Enum literals map to native constants such as `InvoiceStatusLocked`.
+- `datetime` fields compare with methods, never with literals.
+
+## Validation Behavior
+
+Generation fails with structured plugin diagnostics when:
+
+- `@policy` is missing `allow` or uses an unsupported `version`
+- a policy field is optional, out of order, or not a named object type
+- an expression uses an unknown root, field, or enum value
+- an expression mixes incompatible types or misses a required `has()` guard
+- two policies collide to the same Go function name
+- `outFile` does not end with `.go`
+
+## Notes
+
+- If the schema contains no valid `@policy` types, the plugin emits no files.
+- The plugin only generates check functions and the policy catalog.
+- The plugin does not generate generic Go models, enums, or payload structs.
+- Generate payload contracts with [`varavelio/vdl-plugin-go`](https://github.com/varavelio/vdl-plugin-go).
+- This plugin is intended specifically for the VDL policy specification, not full Go model generation.
 
 ## License
 
