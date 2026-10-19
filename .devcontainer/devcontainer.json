@@ -11,7 +11,8 @@
         "varavel.vdl",
         "dprint.dprint",
         "biomejs.biome",
-        "vitest.explorer"
+        "vitest.explorer",
+        "golang.go"
       ],
       "settings": {
         "editor.formatOnSave": true,
@@ -24,6 +25,9 @@
         },
         "[typescript]": {
           "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go"
         }
       }
     }

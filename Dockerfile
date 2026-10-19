@@ -5,8 +5,14 @@
 # Use node as the base image
 FROM node:26.12.0-trixie as tools
 
+# Install golang
+COPY --from=golang:1.27.2-trixie /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+
 # Environment variables
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV \
+  PIP_BREAK_SYSTEM_PACKAGES=1 \
+  CGO_ENABLED=0
 
 # Build time variables
 ARG DEBIAN_FRONTEND=noninteractive
