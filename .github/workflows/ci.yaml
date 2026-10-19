@@ -1,0 +1,20 @@
+name: CI
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+jobs:
+  ci:
+    name: Run CI Script
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run CI Script
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: /bin/bash -c "npm run ci"
