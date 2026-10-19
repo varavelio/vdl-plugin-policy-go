@@ -8,7 +8,13 @@ This project contains a VDL plugin written in TypeScript that is responsible for
 
 To create the plugin, we are using the VDL Plugin SDK. It is IMPERATIVE that you download and read the manual for using the SDK BEFORE starting ANY task, as it defines and explains many important things. It is also important that you use the manual information when writing tests or any utility code, as it contains helpers that should be used whenever possible to avoid duplicating code and keep the code of all VDL plugins in a similar way.
 
-VDL Plugin SDK manual URL (download and read it): https://vdl-plugin-sdk.varavel.com/llms.txt
+## Docunentation
+
+Always read this documentation before any task:
+
+- VPP-3 Policy spec: https://vdl.varavel.com/docs/protocols/policy/index.md
+- VDL Plugin SDK: https://vdl-plugin-sdk.varavel.com/llms.txt
+- VDL Plugin SDK Policy Parser: https://vdl-plugin-sdk.varavel.com/docs/api/policy/index.md
 
 ## Maintaining this Document
 

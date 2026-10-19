@@ -20,7 +20,7 @@ RUN set -e && \
     # Git config
     git config --system --add safe.directory '*'
 
-WORKDIR /workspaces/vdl-plugin-template
+WORKDIR /workspaces/vdl-plugin-policy-go
 
 ################
 # DEVCONTAINER #
