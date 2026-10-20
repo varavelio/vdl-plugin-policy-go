@@ -1,0 +1,102 @@
+type User {
+  id string
+  role string
+  level int
+}
+
+type Doc {
+  ownerId string
+}
+
+type Ctx {
+  minLevel int
+}
+
+@policy({
+  allow "true"
+})
+type CanZebra {
+  principal User
+}
+
+@policy({
+  allow "principal.role == 'admin'"
+})
+type CanApple {
+  principal User
+}
+
+@policy({
+  allow "principal.id == resource.ownerId"
+})
+type CanMango {
+  principal User
+  resource Doc
+}
+
+@policy({
+  allow "principal.level >= context.minLevel"
+})
+type CanBanana {
+  principal User
+  context Ctx
+}
+
+@policy({
+  allow "principal.role in ['admin', 'owner']"
+})
+type CanCherry {
+  principal User
+}
+
+@policy({
+  allow "principal.level > 1"
+  deny "principal.role == 'banned'"
+})
+type CanDate {
+  principal User
+}
+
+@policy({
+  allow "true"
+})
+type CanFig {
+  principal User
+}
+
+@policy({
+  allow "principal.id != ''"
+})
+type CanGrape {
+  principal User
+  resource Doc
+  context Ctx
+}
+
+@policy({
+  allow "true"
+})
+type CanKiwi {
+  principal User
+}
+
+@policy({
+  allow "principal.level >= 0"
+})
+type CanLemon {
+  principal User
+}
+
+@policy({
+  allow "true"
+})
+type CanMelon {
+  principal User
+}
+
+@policy({
+  allow "principal.role != ''"
+})
+type CanOrange {
+  principal User
+}
