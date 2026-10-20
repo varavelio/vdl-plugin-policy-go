@@ -161,7 +161,7 @@ type CanApproveInvoice {
 
 - `VDLPolicyCatalog`: top-level struct grouping per-policy anonymous structs
 - `VDLPolicies`: variable holding the fully typed policy catalog with `Check` function references
-- `Names()`: method returning every policy name in sorted order
+- `VDLPolicyNames`: variable holding every policy name in sorted order
 
 All generated policies are consolidated into a single Go file.
 
@@ -198,8 +198,8 @@ var VDLPolicies = VDLPolicyCatalog{
   },
 }
 
-func (c VDLPolicyCatalog) Names() []string {
-  return []string{"CanAccessPanel"}
+var VDLPolicyNames = []string{
+  "CanAccessPanel",
 }
 
 func canAccessPanel(principal vdltypes.User) bool {
@@ -213,7 +213,7 @@ The catalog is the API, check functions stay unexported and every call goes thro
 
 ```go
 policy.VDLPolicies.CanAccessPanel.Check(user)
-policy.VDLPolicies.Names()
+policy.VDLPolicyNames
 ```
 
 ## Type Mapping

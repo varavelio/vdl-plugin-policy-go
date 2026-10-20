@@ -766,20 +766,12 @@ function renderCatalog(policies, typesPrefix, _schema) {
     lines.push(`		Check: ${toGoUnexportedName(policy.goName)},`);
     lines.push("	},");
   }
-  lines.push(
-    "}",
-    "",
-    "// Names returns every policy name in sorted order.",
-    "func (c VDLPolicyCatalog) Names() []string {"
-  );
-  if (policies.length === 0) {
-    lines.push("	return nil");
-  } else {
-    lines.push("	return []string{");
-    for (const policy of policies) {
-      lines.push(`		${JSON.stringify(policy.name)},`);
-    }
-    lines.push("	}");
+  lines.push("}");
+  lines.push("", "// VDLPolicyNames lists every policy name in sorted order.");
+  lines.push("// Do not modify its contents.");
+  lines.push("var VDLPolicyNames = []string{");
+  for (const policy of policies) {
+    lines.push(`	${JSON.stringify(policy.name)},`);
   }
   lines.push("}");
   return lines;

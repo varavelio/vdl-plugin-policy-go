@@ -169,20 +169,12 @@ function renderCatalog(
     lines.push(`\t\tCheck: ${toGoUnexportedName(policy.goName)},`);
     lines.push("\t},");
   }
-  lines.push(
-    "}",
-    "",
-    "// Names returns every policy name in sorted order.",
-    "func (c VDLPolicyCatalog) Names() []string {",
-  );
-  if (policies.length === 0) {
-    lines.push("\treturn nil");
-  } else {
-    lines.push("\treturn []string{");
-    for (const policy of policies) {
-      lines.push(`\t\t${JSON.stringify(policy.name)},`);
-    }
-    lines.push("\t}");
+  lines.push("}");
+  lines.push("", "// VDLPolicyNames lists every policy name in sorted order.");
+  lines.push("// Do not modify its contents.");
+  lines.push("var VDLPolicyNames = []string{");
+  for (const policy of policies) {
+    lines.push(`\t${JSON.stringify(policy.name)},`);
   }
   lines.push("}");
   return lines;

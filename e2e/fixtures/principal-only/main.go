@@ -17,7 +17,7 @@ func main() {
 		fmt.Println("expected user to fail")
 		os.Exit(1)
 	}
-	if names := gen.VDLPolicies.Names(); len(names) != 1 || names[0] != "CanAccessPanel" {
+	if names := gen.VDLPolicyNames; len(names) != 1 || names[0] != "CanAccessPanel" {
 		fmt.Println("expected Names to list CanAccessPanel")
 		os.Exit(1)
 	}

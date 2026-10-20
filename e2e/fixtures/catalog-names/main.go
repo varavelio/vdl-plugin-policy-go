@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	names := gen.VDLPolicies.Names()
+	names := gen.VDLPolicyNames
 	if len(names) != 3 || names[0] != "CanApple" || names[1] != "CanMiddle" || names[2] != "CanZebra" {
 		fmt.Printf("expected sorted names, got %v\n", names)
 		os.Exit(1)

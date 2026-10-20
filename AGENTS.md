@@ -29,6 +29,6 @@ When updating this document, do so with the context of the entire document in mi
 - `e2e/` this directory contains end to end tests. Recommended structure: one fixture folder per test.
 - Source layout is `shared/`, `options/`, `policy/`, and `go/` under `src/`, mirroring the events and http-rpc plugins.
 - Plugin options are `package` (default `policy`), `outFile` (default `policies.go`), and `typesImport` (default empty for same-package output, using the fixed `vdltypes` alias when set).
-- Generated output is one exported `Can*` function per policy plus `VDLPolicyCatalog` / `VDLPolicies` / `Names()`, with deny evaluated before allow.
+- Generated output is one exported `Can*` function per policy plus `VDLPolicyCatalog` / `VDLPolicies` / `VDLPolicyNames`, with deny evaluated before allow.
 - E2E fixtures generate `types/` with `vdl-plugin-go@v0.1.4` and `gen/` with this plugin (`typesImport` set), plus a `main.go` runtime check verified with `go build ./...` and `go run .`. The `same-package` fixture proves one package works: both plugins share one schema and outDir with no `typesImport`, since unexported check functions never collide with `Can*` model structs. VDL wipes output dirs, so no hand-written files belong in `gen/` or `types/`; only `vdl.lock` is kept for reproducible remote plugin hashes.
 - The Dockerfile provides the Go 1.27 toolchain because e2e compilation needs it.

@@ -15,7 +15,7 @@ func main() {
 		"CanFig", "CanGrape", "CanKiwi", "CanLemon",
 		"CanMango", "CanMelon", "CanOrange", "CanZebra",
 	}
-	names := gen.VDLPolicies.Names()
+	names := gen.VDLPolicyNames
 	if !reflect.DeepEqual(names, want) {
 		fmt.Printf("expected sorted names %v, got %v\n", want, names)
 		os.Exit(1)

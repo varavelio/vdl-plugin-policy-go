@@ -13,7 +13,7 @@ func main() {
 		fmt.Println("expected admin to pass")
 		os.Exit(1)
 	}
-	if len(audit.VDLPolicies.Names()) != 1 {
+	if len(audit.VDLPolicyNames) != 1 {
 		fmt.Println("expected one policy")
 		os.Exit(1)
 	}

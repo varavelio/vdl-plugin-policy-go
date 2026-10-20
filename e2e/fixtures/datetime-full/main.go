@@ -30,7 +30,7 @@ func main() {
 		fmt.Println("expected ranged window to fail instant check")
 		os.Exit(1)
 	}
-	if len(gen.VDLPolicies.Names()) != 2 {
+	if len(gen.VDLPolicyNames) != 2 {
 		fmt.Println("expected two policies")
 		os.Exit(1)
 	}

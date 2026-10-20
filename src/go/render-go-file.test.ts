@@ -49,7 +49,10 @@ describe("renderGoFile", () => {
     expect(out).toContain('return (principal.Role == "admin")');
     expect(out).toContain("type VDLPolicyCatalog struct");
     expect(out).toContain("var VDLPolicies = VDLPolicyCatalog{");
-    expect(out).toContain('\treturn []string{\n\t\t"CanAccessPanel",\n\t}');
+    expect(out).toContain(
+      'var VDLPolicyNames = []string{\n\t"CanAccessPanel",\n}',
+    );
+    expect(out).not.toContain("func (c VDLPolicyCatalog) Names()");
     expect(out).not.toContain('"slices"');
     expect(out).not.toContain("vdltypes");
   });
