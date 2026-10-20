@@ -232,7 +232,11 @@ function renderGoExpr(expr, ctx) {
       return `(${parts.join(" && ")})`;
     }
     case "not": {
-      return `!(${renderGoExpr(expr.value, ctx)})`;
+      const inner = renderGoExpr(expr.value, ctx);
+      if (inner.startsWith("(")) {
+        return `!${inner}`;
+      }
+      return `!(${inner})`;
     }
     case "comparison": {
       return renderComparison(expr.left, expr.operator, expr.right, ctx);
@@ -255,6 +259,67 @@ function renderGoExpr(expr, ctx) {
   }
 }
 __name(renderGoExpr, "renderGoExpr");
+var maxLineWidth = 100;
+function stripOuterParens(rendered) {
+  if (!rendered.startsWith("(") || !rendered.endsWith(")")) {
+    return rendered;
+  }
+  let depth = 0;
+  for (let index = 0; index < rendered.length; index += 1) {
+    if (rendered[index] === "(") {
+      depth += 1;
+    } else if (rendered[index] === ")") {
+      depth -= 1;
+    }
+    if (depth === 0 && index < rendered.length - 1) {
+      return rendered;
+    }
+  }
+  return rendered.slice(1, -1);
+}
+__name(stripOuterParens, "stripOuterParens");
+function renderTopLevelExpr(expr, ctx, indent) {
+  const flat = renderGoExpr(expr, ctx);
+  if (indent.length + flat.length <= maxLineWidth) {
+    return flat;
+  }
+  if (expr.kind !== "or" && expr.kind !== "and") {
+    return flat;
+  }
+  return renderBrokenChain(expr, ctx, indent);
+}
+__name(renderTopLevelExpr, "renderTopLevelExpr");
+function renderBrokenChain(expr, ctx, indent) {
+  const operator = expr.kind === "or" ? "||" : "&&";
+  const items = expr.kind === "or" ? expr.options : expr.clauses;
+  const nestedIndent = `${indent}	`;
+  const parts = items.map(
+    (item, index) => renderBrokenOperand(item, ctx, index === 0 ? indent : nestedIndent)
+  );
+  const [first, ...rest] = parts;
+  if (rest.length === 0) {
+    return `(${first})`;
+  }
+  const lines = [
+    `(${first} ${operator}`,
+    ...rest.map(
+      (part, index) => index === rest.length - 1 ? `${nestedIndent}${part})` : `${nestedIndent}${part} ${operator}`
+    )
+  ];
+  return lines.join("\n");
+}
+__name(renderBrokenChain, "renderBrokenChain");
+function renderBrokenOperand(expr, ctx, indent) {
+  const flat = renderGoExpr(expr, ctx);
+  if (indent.length + flat.length <= maxLineWidth) {
+    return flat;
+  }
+  if (expr.kind !== "or" && expr.kind !== "and") {
+    return flat;
+  }
+  return renderBrokenChain(expr, ctx, indent);
+}
+__name(renderBrokenOperand, "renderBrokenOperand");
 function renderComparison(left, operator, right, ctx) {
   if (exprValueType(left) === "datetime" || exprValueType(right) === "datetime") {
     return renderDatetimeComparison(left, operator, right, ctx);
@@ -272,7 +337,7 @@ function renderComparison(left, operator, right, ctx) {
   if (operator === "==") {
     return `(${guard} && ${direct})`;
   }
-  return `(!(${guard}) || ${direct})`;
+  return `(!${guard} || ${direct})`;
 }
 __name(renderComparison, "renderComparison");
 function exprValueType(expr) {
@@ -331,20 +396,20 @@ function renderDatetimeComparison(left, operator, right, ctx) {
       call = `${leftGo}.After(${rightGo})`;
       break;
     case ">=":
-      call = `(${leftGo}.After(${rightGo}) || ${leftGo}.Equal(${rightGo}))`;
+      call = `${leftGo}.After(${rightGo}) || ${leftGo}.Equal(${rightGo})`;
       break;
     case "<":
       call = `${leftGo}.Before(${rightGo})`;
       break;
     case "<=":
-      call = `(${leftGo}.Before(${rightGo}) || ${leftGo}.Equal(${rightGo}))`;
+      call = `${leftGo}.Before(${rightGo}) || ${leftGo}.Equal(${rightGo})`;
       break;
   }
   if (guard === void 0) {
     return `(${call})`;
   }
   if (operator === "!=") {
-    return `(!(${guard}) || ${call})`;
+    return `(!${guard} || ${call})`;
   }
   return `(${guard} && ${call})`;
 }
@@ -366,7 +431,7 @@ function renderEnumComparison(left, operator, right, ctx) {
     return `(${guard} && ${direct})`;
   }
   if (operator === "!=") {
-    return `(!(${guard}) || ${direct})`;
+    return `(!${guard} || ${direct})`;
   }
   return `(${guard} && ${direct})`;
 }
@@ -591,11 +656,11 @@ function renderGoFile(schema, policies, options) {
   const needsTypesImport = options.typesImport.length > 0 && policies.length > 0;
   if (needsSlices || needsTypesImport) {
     lines.push("import (");
-    if (needsSlices) {
-      lines.push('	"slices"');
-    }
     if (needsTypesImport) {
       lines.push(`	vdltypes ${JSON.stringify(options.typesImport)}`);
+    }
+    if (needsSlices) {
+      lines.push('	"slices"');
     }
     lines.push(")", "");
   }
@@ -616,17 +681,17 @@ __name(renderGoFile, "renderGoFile");
 function renderPolicyFunc(policy, typesPrefix, schema) {
   const params = renderParams(policy, typesPrefix);
   const ctx = { schema, typesPrefix };
-  const allowGo = renderGoExpr(policy.allow, ctx);
   const funcName = toGoUnexportedName(policy.goName);
   const lines = [];
   lines.push(...renderDocLines(policy));
   lines.push(`func ${funcName}(${params}) bool {`);
   if (policy.deny !== void 0) {
-    const denyGo = renderGoExpr(policy.deny, ctx);
-    lines.push(`	if ${denyGo} {`);
+    const denyGo = renderTopLevelExpr(policy.deny, ctx, "	");
+    lines.push(`	if ${stripOuterParens(denyGo)} {`);
     lines.push("		return false");
     lines.push("	}");
   }
+  const allowGo = renderTopLevelExpr(policy.allow, ctx, "	");
   lines.push(`	return ${allowGo}`);
   lines.push("}");
   return lines;
@@ -710,8 +775,11 @@ function renderCatalog(policies, typesPrefix, _schema) {
   if (policies.length === 0) {
     lines.push("	return nil");
   } else {
-    const names = policies.map((policy) => JSON.stringify(policy.name)).join(", ");
-    lines.push(`	return []string{${names}}`);
+    lines.push("	return []string{");
+    for (const policy of policies) {
+      lines.push(`		${JSON.stringify(policy.name)},`);
+    }
+    lines.push("	}");
   }
   lines.push("}");
   return lines;

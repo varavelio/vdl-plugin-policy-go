@@ -138,7 +138,7 @@ describe("renderGoExpr", () => {
   it("makes optional != true when missing", () => {
     const { policy, ir } = policyExpr("principal.department != 'Finance'");
     expect(renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" })).toBe(
-      '(!((principal.Department != nil)) || (*principal.Department) != "Finance")',
+      '(!(principal.Department != nil) || (*principal.Department) != "Finance")',
     );
   });
 

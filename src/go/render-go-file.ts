@@ -2,7 +2,11 @@ import type { IrSchema } from "@varavel/vdl-plugin-sdk";
 import type { GeneratorOptions } from "../options/resolve";
 import type { PolicyModel } from "../policy/policy-model";
 import { toGoUnexportedName } from "../shared/naming";
-import { exprUsesSlices, renderGoExpr } from "./render-go-expr";
+import {
+  exprUsesSlices,
+  renderTopLevelExpr,
+  stripOuterParens,
+} from "./render-go-expr";
 
 /**
  * Renders the consolidated Go output file for all collected policies.
@@ -29,11 +33,11 @@ export function renderGoFile(
     options.typesImport.length > 0 && policies.length > 0;
   if (needsSlices || needsTypesImport) {
     lines.push("import (");
-    if (needsSlices) {
-      lines.push('\t"slices"');
-    }
     if (needsTypesImport) {
       lines.push(`\tvdltypes ${JSON.stringify(options.typesImport)}`);
+    }
+    if (needsSlices) {
+      lines.push('\t"slices"');
     }
     lines.push(")", "");
   }
@@ -63,17 +67,17 @@ function renderPolicyFunc(
 ): string[] {
   const params = renderParams(policy, typesPrefix);
   const ctx = { schema, typesPrefix };
-  const allowGo = renderGoExpr(policy.allow, ctx);
   const funcName = toGoUnexportedName(policy.goName);
   const lines: string[] = [];
   lines.push(...renderDocLines(policy));
   lines.push(`func ${funcName}(${params}) bool {`);
   if (policy.deny !== undefined) {
-    const denyGo = renderGoExpr(policy.deny, ctx);
-    lines.push(`\tif ${denyGo} {`);
+    const denyGo = renderTopLevelExpr(policy.deny, ctx, "\t");
+    lines.push(`\tif ${stripOuterParens(denyGo)} {`);
     lines.push("\t\treturn false");
     lines.push("\t}");
   }
+  const allowGo = renderTopLevelExpr(policy.allow, ctx, "\t");
   lines.push(`\treturn ${allowGo}`);
   lines.push("}");
   return lines;
@@ -174,10 +178,11 @@ function renderCatalog(
   if (policies.length === 0) {
     lines.push("\treturn nil");
   } else {
-    const names = policies
-      .map((policy) => JSON.stringify(policy.name))
-      .join(", ");
-    lines.push(`\treturn []string{${names}}`);
+    lines.push("\treturn []string{");
+    for (const policy of policies) {
+      lines.push(`\t\t${JSON.stringify(policy.name)},`);
+    }
+    lines.push("\t}");
   }
   lines.push("}");
   return lines;

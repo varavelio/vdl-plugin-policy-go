@@ -60,7 +60,11 @@ export function renderGoExpr(expr: PolicyExpr, ctx: ExprContext): string {
       return `(${parts.join(" && ")})`;
     }
     case "not": {
-      return `!(${renderGoExpr(expr.value, ctx)})`;
+      const inner = renderGoExpr(expr.value, ctx);
+      if (inner.startsWith("(")) {
+        return `!${inner}`;
+      }
+      return `!(${inner})`;
     }
     case "comparison": {
       return renderComparison(expr.left, expr.operator, expr.right, ctx);
@@ -81,6 +85,103 @@ export function renderGoExpr(expr: PolicyExpr, ctx: ExprContext): string {
       return renderArrayLiteral(expr, ctx);
     }
   }
+}
+
+/**
+ * Maximum single-line width before operands break onto their own lines.
+ */
+const maxLineWidth = 100;
+
+/**
+ * Removes one pair of outer parentheses when they wrap the whole string.
+ *
+ * Used for `if` conditions, where gofmt strips a redundant outer pair.
+ * The expression stays identical because nothing encloses the result.
+ */
+export function stripOuterParens(rendered: string): string {
+  if (!rendered.startsWith("(") || !rendered.endsWith(")")) {
+    return rendered;
+  }
+  let depth = 0;
+  for (let index = 0; index < rendered.length; index += 1) {
+    if (rendered[index] === "(") {
+      depth += 1;
+    } else if (rendered[index] === ")") {
+      depth -= 1;
+    }
+    if (depth === 0 && index < rendered.length - 1) {
+      return rendered;
+    }
+  }
+  return rendered.slice(1, -1);
+}
+
+/**
+ * Renders a top-level policy expression, breaking long operand chains.
+ */
+export function renderTopLevelExpr(
+  expr: PolicyExpr,
+  ctx: ExprContext,
+  indent: string,
+): string {
+  const flat = renderGoExpr(expr, ctx);
+  if (indent.length + flat.length <= maxLineWidth) {
+    return flat;
+  }
+  if (expr.kind !== "or" && expr.kind !== "and") {
+    return flat;
+  }
+  return renderBrokenChain(expr, ctx, indent);
+}
+
+/**
+ * Renders an `&&` or `||` chain with one operand per line.
+ */
+function renderBrokenChain(
+  expr: { kind: "or" | "and"; options?: PolicyExpr[]; clauses?: PolicyExpr[] },
+  ctx: ExprContext,
+  indent: string,
+): string {
+  const operator = expr.kind === "or" ? "||" : "&&";
+  const items =
+    expr.kind === "or"
+      ? (expr.options as PolicyExpr[])
+      : (expr.clauses as PolicyExpr[]);
+  const nestedIndent = `${indent}\t`;
+  const parts = items.map((item, index) =>
+    renderBrokenOperand(item, ctx, index === 0 ? indent : nestedIndent),
+  );
+  const [first, ...rest] = parts as [string, ...string[]];
+  if (rest.length === 0) {
+    return `(${first})`;
+  }
+  const lines = [
+    `(${first} ${operator}`,
+    ...rest.map((part, index) =>
+      index === rest.length - 1
+        ? `${nestedIndent}${part})`
+        : `${nestedIndent}${part} ${operator}`,
+    ),
+  ];
+  return lines.join("\n");
+}
+
+/**
+ * Renders one operand of a broken chain, breaking nested chains as needed.
+ */
+function renderBrokenOperand(
+  expr: PolicyExpr,
+  ctx: ExprContext,
+  indent: string,
+): string {
+  const flat = renderGoExpr(expr, ctx);
+  if (indent.length + flat.length <= maxLineWidth) {
+    return flat;
+  }
+  if (expr.kind !== "or" && expr.kind !== "and") {
+    return flat;
+  }
+  return renderBrokenChain(expr, ctx, indent);
 }
 
 /**
@@ -111,7 +212,7 @@ function renderComparison(
   if (operator === "==") {
     return `(${guard} && ${direct})`;
   }
-  return `(!(${guard}) || ${direct})`;
+  return `(!${guard} || ${direct})`;
 }
 
 /**
@@ -191,20 +292,20 @@ function renderDatetimeComparison(
       call = `${leftGo}.After(${rightGo})`;
       break;
     case ">=":
-      call = `(${leftGo}.After(${rightGo}) || ${leftGo}.Equal(${rightGo}))`;
+      call = `${leftGo}.After(${rightGo}) || ${leftGo}.Equal(${rightGo})`;
       break;
     case "<":
       call = `${leftGo}.Before(${rightGo})`;
       break;
     case "<=":
-      call = `(${leftGo}.Before(${rightGo}) || ${leftGo}.Equal(${rightGo}))`;
+      call = `${leftGo}.Before(${rightGo}) || ${leftGo}.Equal(${rightGo})`;
       break;
   }
   if (guard === undefined) {
     return `(${call})`;
   }
   if (operator === "!=") {
-    return `(!(${guard}) || ${call})`;
+    return `(!${guard} || ${call})`;
   }
   return `(${guard} && ${call})`;
 }
@@ -233,7 +334,7 @@ function renderEnumComparison(
     return `(${guard} && ${direct})`;
   }
   if (operator === "!=") {
-    return `(!(${guard}) || ${direct})`;
+    return `(!${guard} || ${direct})`;
   }
   return `(${guard} && ${direct})`;
 }
