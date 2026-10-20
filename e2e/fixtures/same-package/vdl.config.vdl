@@ -1,0 +1,21 @@
+const config = {
+  version 1
+  plugins [
+    {
+      src "varavelio/vdl-plugin-go@v0.1.4"
+      schema "./models.vdl"
+      outDir "./gen"
+      options {
+        package "gen"
+      }
+    }
+    {
+      src "../../../dist/index.js"
+      schema "./schema.vdl"
+      outDir "./gen"
+      options {
+        package "gen"
+      }
+    }
+  ]
+}

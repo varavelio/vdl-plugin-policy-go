@@ -1,0 +1,8 @@
+type User {
+  id string
+  role string
+}
+
+type Doc {
+  ownerId string
+}

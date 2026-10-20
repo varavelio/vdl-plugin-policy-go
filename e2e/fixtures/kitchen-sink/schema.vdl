@@ -1,0 +1,90 @@
+enum DocStatus {
+  Draft
+  Review
+  Published
+  Archived
+}
+
+enum Clearance {
+  Low = 1
+  High = 2
+}
+
+type Employee {
+  id string
+  role string
+  level int
+  rating float
+  active bool
+  department? string
+  team? string
+  clearance Clearance
+}
+
+type Document {
+  ownerId string
+  status DocStatus
+  sensitivity int
+  score float
+  title string
+  tags string[]
+  allowedIds string[]
+  publishedAt datetime
+  expiresAt? datetime
+  archived bool
+}
+
+type Request {
+  now datetime
+  mfaVerified bool
+  ip string
+  attempt int
+}
+
+@policy({
+  allow "
+    principal.active == true &&
+    principal.clearance == 2 &&
+    (
+      principal.id == resource.ownerId ||
+      principal.role in ['admin', 'owner'] ||
+      principal.id in resource.allowedIds
+    ) &&
+    (
+      has(principal.department) &&
+      (
+        principal.department == 'Finance' ||
+        principal.department in ['Legal', 'Ops']
+      ) ||
+      principal.role == 'superadmin'
+    ) &&
+    resource.status == 'Published' &&
+    resource.sensitivity <= 3 &&
+    resource.score > 7.5 &&
+    resource.title != '' &&
+    resource.title > 'A' &&
+    has(resource.expiresAt) &&
+    resource.expiresAt > context.now &&
+    resource.publishedAt < context.now &&
+    resource.archived == false &&
+    context.mfaVerified == true &&
+    context.attempt < 3 &&
+    context.ip != '' &&
+    !(resource.sensitivity > 5) &&
+    principal.level >= 2 &&
+    principal.rating >= 4.5
+  "
+  deny "
+    resource.status == 'Archived' ||
+    principal.active == false ||
+    (
+      has(principal.team) &&
+      principal.team == 'Blocked'
+    )
+  "
+})
+type CanReadDocument {
+  principal Employee
+  resource Document
+  context Request
+}

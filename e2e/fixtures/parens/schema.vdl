@@ -1,0 +1,53 @@
+enum DocStatus {
+  Draft
+  Review
+  Published
+}
+
+type User {
+  id string
+  role string
+  level int
+  department? string
+  banned bool
+}
+
+type Doc {
+  status DocStatus
+  allowedIds string[]
+  archived bool
+}
+
+@policy({
+  allow "
+    (
+      principal.role == 'admin' ||
+      principal.role == 'owner'
+    ) &&
+    (
+      resource.status == 'Published' ||
+      resource.status == 'Review'
+    ) &&
+    (
+      has(principal.department) &&
+      (
+        principal.department == 'Finance' ||
+        principal.department == 'Legal'
+      ) ||
+      principal.level > 9000
+    ) &&
+    (
+      principal.id in resource.allowedIds ||
+      !(resource.archived == true)
+    ) &&
+    (
+      principal.level >= 5 ||
+      principal.role in ['super', 'root']
+    )
+  "
+  deny "principal.banned == true"
+})
+type CanOpenDoc {
+  principal User
+  resource Doc
+}

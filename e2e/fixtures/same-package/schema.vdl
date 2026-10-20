@@ -1,0 +1,16 @@
+type User {
+  id string
+  role string
+}
+
+type Doc {
+  ownerId string
+}
+
+@policy({
+  allow "principal.id == resource.ownerId || principal.role == 'admin'"
+})
+type CanReadDoc {
+  principal User
+  resource Doc
+}
