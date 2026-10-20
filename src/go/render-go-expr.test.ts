@@ -5,6 +5,7 @@ import {
   enumMember,
   enumType,
   field,
+  intLiteral,
   namedType,
   objectLiteral,
   objectType,
@@ -224,5 +225,182 @@ describe("renderGoExpr", () => {
     expect(
       renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" }),
     ).toContain("||");
+  });
+});
+
+describe("renderGoExpr edge cases", () => {
+  it("maps enum literals on the left side to constants", () => {
+    const { policy, ir } = policyExpr("'Unlocked' == resource.status");
+    expect(renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" })).toBe(
+      "(InvoiceStatusUnlocked == resource.Status)",
+    );
+  });
+
+  it("expands int literal membership without slices", () => {
+    const { policy, ir } = policyExpr("principal.age in [18, 21]");
+    const out = renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" });
+    expect(out).toBe("((principal.Age == 18) || (principal.Age == 21))");
+  });
+
+  it("keeps optional values null-safe inside literal membership", () => {
+    const { policy, ir } = policyExpr(
+      "has(principal.department) && principal.department in ['Finance', 'Sales']",
+    );
+    const out = renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" });
+    expect(out).toContain('(*principal.Department) == "Finance"');
+    expect(out).toContain('(*principal.Department) == "Sales"');
+  });
+
+  it("maps int enum literals inside membership lists", () => {
+    const ir = schema({
+      enums: [
+        enumDef("Priority", "int", [
+          enumMember("Low", intLiteral(0)),
+          enumMember("High", intLiteral(5)),
+        ]),
+      ],
+      types: [
+        typeDef("User", objectType([field("id", primitiveType("string"))])),
+        typeDef(
+          "Ticket",
+          objectType([field("priority", enumType("Priority", "int"))]),
+        ),
+        typeDef(
+          "CanTest",
+          objectType([
+            field("principal", namedType("User")),
+            field("resource", namedType("Ticket")),
+          ]),
+          {
+            annotations: [
+              annotation(
+                "policy",
+                objectLiteral({
+                  allow: stringLiteral("resource.priority in [5, 0]"),
+                }),
+              ),
+            ],
+          },
+        ),
+      ],
+    });
+    const policy = assertDefined(collectPolicyModels(ir)[0]);
+    const out = renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" });
+    expect(out).toContain("resource.Priority == PriorityHigh");
+    expect(out).toContain("resource.Priority == PriorityLow");
+  });
+
+  it("dereferences optional arrays inside slices.Contains", () => {
+    const ir = schema({
+      types: [
+        typeDef("User", objectType([field("id", primitiveType("string"))])),
+        typeDef(
+          "Invoice",
+          objectType([
+            field("allowedIds", arrayType(primitiveType("string")), {
+              optional: true,
+            }),
+          ]),
+        ),
+        typeDef(
+          "CanTest",
+          objectType([
+            field("principal", namedType("User")),
+            field("resource", namedType("Invoice")),
+          ]),
+          {
+            annotations: [
+              annotation(
+                "policy",
+                objectLiteral({
+                  allow: stringLiteral(
+                    "has(resource.allowedIds) && principal.id in resource.allowedIds",
+                  ),
+                }),
+              ),
+            ],
+          },
+        ),
+      ],
+    });
+    const policy = assertDefined(collectPolicyModels(ir)[0]);
+    const out = renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" });
+    expect(out).toContain(
+      "slices.Contains((*resource.AllowedIds), principal.Id)",
+    );
+  });
+
+  it("compares optional datetimes through dereferenced values", () => {
+    const ir = schema({
+      types: [
+        typeDef(
+          "Invoice",
+          objectType([
+            field("expiresAt", primitiveType("datetime"), { optional: true }),
+          ]),
+        ),
+        typeDef("Ctx", objectType([field("now", primitiveType("datetime"))])),
+        typeDef(
+          "CanTest",
+          objectType([
+            field("principal", namedType("Invoice")),
+            field("resource", namedType("Invoice")),
+            field("context", namedType("Ctx")),
+          ]),
+          {
+            annotations: [
+              annotation(
+                "policy",
+                objectLiteral({
+                  allow: stringLiteral(
+                    "has(resource.expiresAt) && resource.expiresAt > context.now",
+                  ),
+                }),
+              ),
+            ],
+          },
+        ),
+      ],
+    });
+    const policy = assertDefined(collectPolicyModels(ir)[0]);
+    const out = renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" });
+    expect(out).toContain("(*resource.ExpiresAt).After(context.Now)");
+  });
+
+  it("compares datetimes with Equal inside membership lists", () => {
+    const ir = schema({
+      types: [
+        typeDef("Event", objectType([field("at", primitiveType("datetime"))])),
+        typeDef(
+          "Ctx",
+          objectType([
+            field("a", primitiveType("datetime")),
+            field("b", primitiveType("datetime")),
+          ]),
+        ),
+        typeDef(
+          "CanTest",
+          objectType([
+            field("principal", namedType("Event")),
+            field("resource", namedType("Event")),
+            field("context", namedType("Ctx")),
+          ]),
+          {
+            annotations: [
+              annotation(
+                "policy",
+                objectLiteral({
+                  allow: stringLiteral("resource.at in [context.a, context.b]"),
+                }),
+              ),
+            ],
+          },
+        ),
+      ],
+    });
+    const policy = assertDefined(collectPolicyModels(ir)[0]);
+    const out = renderGoExpr(policy.allow, { schema: ir, typesPrefix: "" });
+    expect(out).toContain("resource.At.Equal(context.A)");
+    expect(out).toContain("resource.At.Equal(context.B)");
   });
 });

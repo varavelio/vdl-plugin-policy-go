@@ -109,7 +109,9 @@ function renderDocLines(policy: PolicyModel): string[] {
     lines.push(`// ${policy.goName} checks the ${policy.name} policy.`);
   }
   if (policy.isDeprecated) {
-    const message = policy.deprecationMessage ?? "This policy is deprecated.";
+    const message = (
+      policy.deprecationMessage ?? "This policy is deprecated."
+    ).replace(/\s+/g, " ");
     lines.push("//", `// Deprecated: ${message}`);
   }
   return lines;
@@ -156,7 +158,7 @@ function renderCatalog(
     lines.push("\t\t// Check evaluates this policy.");
     lines.push(`\t\tCheck func(${params}) bool`);
     lines.push("\t}{");
-    lines.push(`\t\tName: ${JSON.stringify(policy.name)},`);
+    lines.push(`\t\tName:  ${JSON.stringify(policy.name)},`);
     lines.push(`\t\tCheck: ${policy.goName},`);
     lines.push("\t},");
   }

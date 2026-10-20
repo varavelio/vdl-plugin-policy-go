@@ -92,11 +92,13 @@ function renderComparison(
   right: PolicyExpr,
   ctx: ExprContext,
 ): string {
-  const leftType = exprValueType(left);
-  if (leftType === "datetime") {
+  if (
+    exprValueType(left) === "datetime" ||
+    exprValueType(right) === "datetime"
+  ) {
     return renderDatetimeComparison(left, operator, right, ctx);
   }
-  if (leftType.startsWith("enum:")) {
+  if (enumNameOf(left) !== undefined || enumNameOf(right) !== undefined) {
     return renderEnumComparison(left, operator, right, ctx);
   }
   const leftGo = renderOperandValue(left, ctx);
@@ -272,7 +274,10 @@ function renderIn(
     if (candidates.items.length === 0) {
       return "(false)";
     }
-    const valueEnum = enumNameOf(value);
+    if (exprValueType(value) === "datetime") {
+      return renderDatetimeIn(value, candidates, ctx);
+    }
+    const valueEnum = enumNameOf(value) ?? enumNameOfItems(candidates);
     const parts = candidates.items.map((item) => {
       if (valueEnum !== undefined && item.kind === "literal") {
         const leftGo = renderOperandValue(value, ctx);
@@ -316,6 +321,43 @@ function renderIn(
     return `(${call})`;
   }
   return `(${guard} && ${call})`;
+}
+
+/**
+ * Returns the enum name carried by array items, when any item is an enum ref.
+ */
+function enumNameOfItems(array: PolicyArray): string | undefined {
+  for (const item of array.items) {
+    const found = enumNameOf(item);
+    if (found !== undefined) {
+      return found;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Renders datetime membership against a literal array with `Equal`.
+ */
+function renderDatetimeIn(
+  value: PolicyExpr,
+  candidates: PolicyArray,
+  ctx: ExprContext,
+): string {
+  const valueGo = renderOperandValue(value, ctx);
+  const parts = candidates.items.map((item) => {
+    const itemGo = renderOperandValue(item, ctx);
+    const guard = nullSafeGuard(value, item, ctx);
+    const direct = `${valueGo}.Equal(${itemGo})`;
+    if (guard === undefined) {
+      return `(${direct})`;
+    }
+    return `(${guard} && ${direct})`;
+  });
+  if (parts.length === 1) {
+    return parts[0] as string;
+  }
+  return `(${parts.join(" || ")})`;
 }
 
 /**

@@ -17,7 +17,8 @@ type Invoice {
   allow "
     principal.role == resource.ownerRole ||
     principal.role in resource.allowedRoles ||
-    principal.role in ['Admin', 'Owner']
+    principal.role in ['Admin', 'Owner'] ||
+    'Owner' == principal.role
   "
 })
 type CanAct {

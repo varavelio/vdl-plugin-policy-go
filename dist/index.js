@@ -244,11 +244,10 @@ function renderGoExpr(expr, ctx) {
 }
 __name(renderGoExpr, "renderGoExpr");
 function renderComparison(left, operator, right, ctx) {
-  const leftType = exprValueType(left);
-  if (leftType === "datetime") {
+  if (exprValueType(left) === "datetime" || exprValueType(right) === "datetime") {
     return renderDatetimeComparison(left, operator, right, ctx);
   }
-  if (leftType.startsWith("enum:")) {
+  if (enumNameOf(left) !== void 0 || enumNameOf(right) !== void 0) {
     return renderEnumComparison(left, operator, right, ctx);
   }
   const leftGo = renderOperandValue(left, ctx);
@@ -375,11 +374,15 @@ function renderEnumOperand(expr, enumName, ctx) {
 }
 __name(renderEnumOperand, "renderEnumOperand");
 function renderIn(value, candidates, ctx) {
+  var _a4;
   if (candidates.kind === "array") {
     if (candidates.items.length === 0) {
       return "(false)";
     }
-    const valueEnum = enumNameOf(value);
+    if (exprValueType(value) === "datetime") {
+      return renderDatetimeIn(value, candidates, ctx);
+    }
+    const valueEnum = (_a4 = enumNameOf(value)) != null ? _a4 : enumNameOfItems(candidates);
     const parts = candidates.items.map((item) => {
       if (valueEnum !== void 0 && item.kind === "literal") {
         const leftGo2 = renderOperandValue(value, ctx);
@@ -425,6 +428,33 @@ function renderIn(value, candidates, ctx) {
   return `(${guard} && ${call})`;
 }
 __name(renderIn, "renderIn");
+function enumNameOfItems(array) {
+  for (const item of array.items) {
+    const found = enumNameOf(item);
+    if (found !== void 0) {
+      return found;
+    }
+  }
+  return void 0;
+}
+__name(enumNameOfItems, "enumNameOfItems");
+function renderDatetimeIn(value, candidates, ctx) {
+  const valueGo = renderOperandValue(value, ctx);
+  const parts = candidates.items.map((item) => {
+    const itemGo = renderOperandValue(item, ctx);
+    const guard = nullSafeGuard(value, item, ctx);
+    const direct = `${valueGo}.Equal(${itemGo})`;
+    if (guard === void 0) {
+      return `(${direct})`;
+    }
+    return `(${guard} && ${direct})`;
+  });
+  if (parts.length === 1) {
+    return parts[0];
+  }
+  return `(${parts.join(" || ")})`;
+}
+__name(renderDatetimeIn, "renderDatetimeIn");
 function renderHas(ref) {
   const checks = [];
   const prefix = [ref.root];
@@ -613,7 +643,7 @@ function renderDocLines(policy) {
     lines.push(`// ${policy.goName} checks the ${policy.name} policy.`);
   }
   if (policy.isDeprecated) {
-    const message = (_c = policy.deprecationMessage) != null ? _c : "This policy is deprecated.";
+    const message = ((_c = policy.deprecationMessage) != null ? _c : "This policy is deprecated.").replace(/\s+/g, " ");
     lines.push("//", `// Deprecated: ${message}`);
   }
   return lines;
@@ -653,7 +683,7 @@ function renderCatalog(policies, typesPrefix, _schema) {
     lines.push("		// Check evaluates this policy.");
     lines.push(`		Check func(${params}) bool`);
     lines.push("	}{");
-    lines.push(`		Name: ${JSON.stringify(policy.name)},`);
+    lines.push(`		Name:  ${JSON.stringify(policy.name)},`);
     lines.push(`		Check: ${policy.goName},`);
     lines.push("	},");
   }
