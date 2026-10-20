@@ -13,19 +13,19 @@ func main() {
 	inv := types.Invoice{OwnerId: "u1"}
 	mfa := types.SessionContext{MfaVerified: true}
 	noMfa := types.SessionContext{}
-	if !gen.CanApproveInvoice(owner, inv, mfa) {
+	if !gen.VDLPolicies.CanApproveInvoice.Check(owner, inv, mfa) {
 		fmt.Println("expected owner with mfa to pass")
 		os.Exit(1)
 	}
-	if gen.CanApproveInvoice(owner, inv, noMfa) {
+	if gen.VDLPolicies.CanApproveInvoice.Check(owner, inv, noMfa) {
 		fmt.Println("expected missing mfa to fail")
 		os.Exit(1)
 	}
-	if gen.CanApproveInvoice(types.User{Id: "u1", Disabled: true}, inv, mfa) {
+	if gen.VDLPolicies.CanApproveInvoice.Check(types.User{Id: "u1", Disabled: true}, inv, mfa) {
 		fmt.Println("expected deny to win over allow")
 		os.Exit(1)
 	}
-	if gen.CanApproveInvoice(types.User{Id: "u2"}, inv, mfa) {
+	if gen.VDLPolicies.CanApproveInvoice.Check(types.User{Id: "u2"}, inv, mfa) {
 		fmt.Println("expected non-owner to fail")
 		os.Exit(1)
 	}

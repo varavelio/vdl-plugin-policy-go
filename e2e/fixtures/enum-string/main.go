@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-	if !gen.CanPayInvoice(types.User{Id: "u1"}, types.Invoice{Status: types.InvoiceStatusUnlocked}) {
+	if !gen.VDLPolicies.CanPayInvoice.Check(types.User{Id: "u1"}, types.Invoice{Status: types.InvoiceStatusUnlocked}) {
 		fmt.Println("expected unlocked to pass")
 		os.Exit(1)
 	}
-	if gen.CanPayInvoice(types.User{Id: "u1"}, types.Invoice{Status: types.InvoiceStatusLocked}) {
+	if gen.VDLPolicies.CanPayInvoice.Check(types.User{Id: "u1"}, types.Invoice{Status: types.InvoiceStatusLocked}) {
 		fmt.Println("expected locked to fail")
 		os.Exit(1)
 	}

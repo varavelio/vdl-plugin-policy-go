@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-	if !gen.HasDepartment(types.User{Department: types.Ptr("Finance")}) {
+	if !gen.VDLPolicies.HasDepartment.Check(types.User{Department: types.Ptr("Finance")}) {
 		fmt.Println("expected present to pass")
 		os.Exit(1)
 	}
-	if gen.HasDepartment(types.User{}) {
+	if gen.VDLPolicies.HasDepartment.Check(types.User{}) {
 		fmt.Println("expected missing to fail")
 		os.Exit(1)
 	}

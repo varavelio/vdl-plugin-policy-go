@@ -66,6 +66,24 @@ export function toGoEnumMemberName(value: string): string {
 }
 
 /**
+ * Converts an exported Go name into its unexported form.
+ */
+export function toGoUnexportedName(value: string): string {
+  return lowerFirst(value);
+}
+
+/**
+ * Lowercases the first Unicode letter and leaves the rest untouched.
+ */
+export function lowerFirst(value: string): string {
+  if (value.length === 0) {
+    return value;
+  }
+  const [first, ...rest] = Array.from(value);
+  return (first as string).toLowerCase() + rest.join("");
+}
+
+/**
  * Escapes a Go identifier when it collides with a reserved keyword.
  */
 function escapeGoIdentifier(value: string): string {

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	if !audit.CanAccess(types.User{Role: "admin"}) {
+	if !audit.VDLPolicies.CanAccess.Check(types.User{Role: "admin"}) {
 		fmt.Println("expected admin to pass")
 		os.Exit(1)
 	}

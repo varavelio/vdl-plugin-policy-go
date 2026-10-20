@@ -1,6 +1,7 @@
 import type { IrSchema } from "@varavel/vdl-plugin-sdk";
 import type { GeneratorOptions } from "../options/resolve";
 import type { PolicyModel } from "../policy/policy-model";
+import { toGoUnexportedName } from "../shared/naming";
 import { exprUsesSlices, renderGoExpr } from "./render-go-expr";
 
 /**
@@ -63,9 +64,10 @@ function renderPolicyFunc(
   const params = renderParams(policy, typesPrefix);
   const ctx = { schema, typesPrefix };
   const allowGo = renderGoExpr(policy.allow, ctx);
+  const funcName = toGoUnexportedName(policy.goName);
   const lines: string[] = [];
   lines.push(...renderDocLines(policy));
-  lines.push(`func ${policy.goName}(${params}) bool {`);
+  lines.push(`func ${funcName}(${params}) bool {`);
   if (policy.deny !== undefined) {
     const denyGo = renderGoExpr(policy.deny, ctx);
     lines.push(`\tif ${denyGo} {`);
@@ -99,14 +101,15 @@ function renderParams(policy: PolicyModel, typesPrefix: string): string {
  */
 function renderDocLines(policy: PolicyModel): string[] {
   const lines: string[] = [];
+  const funcName = toGoUnexportedName(policy.goName);
   if (policy.doc !== undefined && policy.doc.trim().length > 0) {
     const first = policy.doc.split("\n")[0]?.trim() ?? "";
-    lines.push(`// ${policy.goName} checks the ${policy.name} policy.`);
+    lines.push(`// ${funcName} checks the ${policy.name} policy.`);
     if (first.length > 0) {
       lines.push(`// ${first}`);
     }
   } else {
-    lines.push(`// ${policy.goName} checks the ${policy.name} policy.`);
+    lines.push(`// ${funcName} checks the ${policy.name} policy.`);
   }
   if (policy.isDeprecated) {
     const message = (
@@ -159,7 +162,7 @@ function renderCatalog(
     lines.push(`\t\tCheck func(${params}) bool`);
     lines.push("\t}{");
     lines.push(`\t\tName:  ${JSON.stringify(policy.name)},`);
-    lines.push(`\t\tCheck: ${policy.goName},`);
+    lines.push(`\t\tCheck: ${toGoUnexportedName(policy.goName)},`);
     lines.push("\t},");
   }
   lines.push(

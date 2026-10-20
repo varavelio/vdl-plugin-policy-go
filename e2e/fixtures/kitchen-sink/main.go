@@ -36,7 +36,7 @@ func passing(now time.Time) (types.Employee, types.Document, types.Request) {
 func main() {
 	now := time.Now()
 	p, r, c := passing(now)
-	if !gen.CanReadDocument(p, r, c) {
+	if !gen.VDLPolicies.CanReadDocument.Check(p, r, c) {
 		fmt.Println("expected full pass to allow")
 		os.Exit(1)
 	}
@@ -47,21 +47,21 @@ func main() {
 
 	archived := r
 	archived.Status = types.DocStatusArchived
-	if gen.CanReadDocument(p, archived, c) {
+	if gen.VDLPolicies.CanReadDocument.Check(p, archived, c) {
 		fmt.Println("expected archived deny to win")
 		os.Exit(1)
 	}
 
 	inactive := p
 	inactive.Active = false
-	if gen.CanReadDocument(inactive, r, c) {
+	if gen.VDLPolicies.CanReadDocument.Check(inactive, r, c) {
 		fmt.Println("expected inactive deny to win")
 		os.Exit(1)
 	}
 
 	blocked := p
 	blocked.Team = types.Ptr("Blocked")
-	if gen.CanReadDocument(blocked, r, c) {
+	if gen.VDLPolicies.CanReadDocument.Check(blocked, r, c) {
 		fmt.Println("expected blocked team deny to win")
 		os.Exit(1)
 	}
@@ -76,21 +76,21 @@ func main() {
 	}
 	strangerDoc := r
 	strangerDoc.OwnerId = "u1"
-	if gen.CanReadDocument(stranger, strangerDoc, c) {
+	if gen.VDLPolicies.CanReadDocument.Check(stranger, strangerDoc, c) {
 		fmt.Println("expected stranger without access to fail")
 		os.Exit(1)
 	}
 
 	expired := r
 	expired.ExpiresAt = types.Ptr(now.Add(-time.Hour))
-	if gen.CanReadDocument(p, expired, c) {
+	if gen.VDLPolicies.CanReadDocument.Check(p, expired, c) {
 		fmt.Println("expected expired document to fail")
 		os.Exit(1)
 	}
 
 	noMfa := c
 	noMfa.MfaVerified = false
-	if gen.CanReadDocument(p, r, noMfa) {
+	if gen.VDLPolicies.CanReadDocument.Check(p, r, noMfa) {
 		fmt.Println("expected missing mfa to fail")
 		os.Exit(1)
 	}

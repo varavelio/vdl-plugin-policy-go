@@ -9,15 +9,15 @@ import (
 )
 
 func main() {
-	if !gen.CanGreet(types.User{Nickname: "O'Neil"}) {
+	if !gen.VDLPolicies.CanGreet.Check(types.User{Nickname: "O'Neil"}) {
 		fmt.Println("expected escaped quote to pass")
 		os.Exit(1)
 	}
-	if !gen.CanGreet(types.User{Code: `a\b`}) {
+	if !gen.VDLPolicies.CanGreet.Check(types.User{Code: `a\b`}) {
 		fmt.Println("expected escaped backslash to pass")
 		os.Exit(1)
 	}
-	if gen.CanGreet(types.User{Nickname: "Other", Code: "other"}) {
+	if gen.VDLPolicies.CanGreet.Check(types.User{Nickname: "Other", Code: "other"}) {
 		fmt.Println("expected other values to fail")
 		os.Exit(1)
 	}

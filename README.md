@@ -159,7 +159,6 @@ type CanApproveInvoice {
 
 ## What You Get
 
-- One exported function per policy: `CanApproveInvoice(principal User, resource Invoice) bool`
 - `VDLPolicyCatalog`: top-level struct grouping per-policy anonymous structs
 - `VDLPolicies`: variable holding the fully typed policy catalog with `Check` function references
 - `Names()`: method returning every policy name in sorted order
@@ -195,7 +194,7 @@ var VDLPolicies = VDLPolicyCatalog{
     Check func(vdltypes.User) bool
   }{
     Name: "CanAccessPanel",
-    Check: CanAccessPanel,
+    Check: canAccessPanel,
   },
 }
 
@@ -203,17 +202,16 @@ func (c VDLPolicyCatalog) Names() []string {
   return []string{"CanAccessPanel"}
 }
 
-func CanAccessPanel(principal vdltypes.User) bool {
+func canAccessPanel(principal vdltypes.User) bool {
   return (principal.Role == "admin")
 }
 ```
 
 Each function evaluates `deny` first and returns `false` immediately, then returns `allow`.
 
-Direct calls are the primary API, the catalog only references the same functions for inventory and dynamic dispatch:
+The catalog is the API, check functions stay unexported and every call goes through `VDLPolicies`:
 
 ```go
-policy.CanAccessPanel(user)
 policy.VDLPolicies.CanAccessPanel.Check(user)
 policy.VDLPolicies.Names()
 ```
@@ -255,6 +253,7 @@ Generation fails with structured plugin diagnostics when:
 ## Notes
 
 - If the schema contains no valid `@policy` types, the plugin emits no files.
+- Models and policies may share one package: check functions are unexported, so `Can*` model structs never collide. Use separate packages with `typesImport` for larger layouts.
 - The plugin only generates check functions and the policy catalog.
 - The plugin does not generate generic Go models, enums, or payload structs.
 - Generate payload contracts with [`varavelio/vdl-plugin-go`](https://github.com/varavelio/vdl-plugin-go).

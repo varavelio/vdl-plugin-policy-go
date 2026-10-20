@@ -4,6 +4,7 @@ import {
   toGoEnumMemberName,
   toGoFieldName,
   toGoTypeName,
+  toGoUnexportedName,
 } from "./naming";
 
 describe("naming", () => {
@@ -23,5 +24,11 @@ describe("naming", () => {
     expect(isValidGoPackageName("Policy")).toBe(false);
     expect(isValidGoPackageName("my-policy")).toBe(false);
     expect(isValidGoPackageName("func")).toBe(false);
+  });
+});
+
+describe("toGoUnexportedName", () => {
+  it("lowercases the first letter for unexported check functions", () => {
+    expect(toGoUnexportedName("CanAccessPanel")).toBe("canAccessPanel");
   });
 });

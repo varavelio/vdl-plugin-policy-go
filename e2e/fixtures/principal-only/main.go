@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-	if !gen.CanAccessPanel(types.User{Role: "admin"}) {
+	if !gen.VDLPolicies.CanAccessPanel.Check(types.User{Role: "admin"}) {
 		fmt.Println("expected admin to pass")
 		os.Exit(1)
 	}
-	if gen.CanAccessPanel(types.User{Role: "user"}) {
+	if gen.VDLPolicies.CanAccessPanel.Check(types.User{Role: "user"}) {
 		fmt.Println("expected user to fail")
 		os.Exit(1)
 	}

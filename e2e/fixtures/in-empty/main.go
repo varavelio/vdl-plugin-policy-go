@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	if gen.CanNever(types.User{Role: "admin"}) {
+	if gen.VDLPolicies.CanNever.Check(types.User{Role: "admin"}) {
 		fmt.Println("expected empty in to always fail")
 		os.Exit(1)
 	}

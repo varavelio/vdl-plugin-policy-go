@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	if !gen.CanOld(types.User{Id: "u1"}) {
+	if !gen.VDLPolicies.CanOld.Check(types.User{Id: "u1"}) {
 		fmt.Println("expected deprecated policy to still pass")
 		os.Exit(1)
 	}

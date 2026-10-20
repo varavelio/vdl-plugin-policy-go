@@ -10,19 +10,19 @@ import (
 
 func main() {
 	finance := types.User{Profile: &types.Profile{Department: types.Ptr("Finance")}}
-	if !gen.CanAccessFinance(finance) {
+	if !gen.VDLPolicies.CanAccessFinance.Check(finance) {
 		fmt.Println("expected nested finance to pass")
 		os.Exit(1)
 	}
-	if gen.CanAccessFinance(types.User{}) {
+	if gen.VDLPolicies.CanAccessFinance.Check(types.User{}) {
 		fmt.Println("expected nil profile to fail")
 		os.Exit(1)
 	}
-	if gen.CanAccessFinance(types.User{Profile: &types.Profile{}}) {
+	if gen.VDLPolicies.CanAccessFinance.Check(types.User{Profile: &types.Profile{}}) {
 		fmt.Println("expected nil department to fail")
 		os.Exit(1)
 	}
-	if gen.CanAccessFinance(types.User{Profile: &types.Profile{Department: types.Ptr("Sales")}}) {
+	if gen.VDLPolicies.CanAccessFinance.Check(types.User{Profile: &types.Profile{Department: types.Ptr("Sales")}}) {
 		fmt.Println("expected wrong department to fail")
 		os.Exit(1)
 	}

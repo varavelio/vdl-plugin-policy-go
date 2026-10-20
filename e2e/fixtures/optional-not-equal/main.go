@@ -9,15 +9,15 @@ import (
 )
 
 func main() {
-	if !gen.CanSkipFinance(types.User{}) {
+	if !gen.VDLPolicies.CanSkipFinance.Check(types.User{}) {
 		fmt.Println("expected missing to be not-equal")
 		os.Exit(1)
 	}
-	if !gen.CanSkipFinance(types.User{Department: types.Ptr("Sales")}) {
+	if !gen.VDLPolicies.CanSkipFinance.Check(types.User{Department: types.Ptr("Sales")}) {
 		fmt.Println("expected sales to pass")
 		os.Exit(1)
 	}
-	if gen.CanSkipFinance(types.User{Department: types.Ptr("Finance")}) {
+	if gen.VDLPolicies.CanSkipFinance.Check(types.User{Department: types.Ptr("Finance")}) {
 		fmt.Println("expected finance to fail")
 		os.Exit(1)
 	}

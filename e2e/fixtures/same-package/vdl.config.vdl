@@ -3,7 +3,7 @@ const config = {
   plugins [
     {
       src "varavelio/vdl-plugin-go@v0.1.4"
-      schema "./models.vdl"
+      schema "./schema.vdl"
       outDir "./gen"
       options {
         package "gen"

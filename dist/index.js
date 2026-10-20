@@ -80,36 +80,6 @@ function toPluginError(error) {
 }
 __name(toPluginError, "toPluginError");
 
-// src/shared/errors.ts
-var _GenerationError = class _GenerationError extends Error {
-  /**
-   * Creates a generation error with an optional VDL source position.
-   */
-  constructor(message, position) {
-    super(message);
-    __publicField(this, "position");
-    this.name = "GenerationError";
-    this.position = position;
-  }
-};
-__name(_GenerationError, "GenerationError");
-var GenerationError = _GenerationError;
-function fail2(message, position) {
-  throw new GenerationError(message, position);
-}
-__name(fail2, "fail");
-function toPluginOutputError(error) {
-  if (error instanceof GenerationError) {
-    return error.position ? { message: error.message, position: error.position } : { message: error.message };
-  }
-  if (error instanceof Error) {
-    const position = error.position;
-    return position ? { message: error.message, position } : { message: error.message };
-  }
-  return { message: "An unknown generation error occurred." };
-}
-__name(toPluginOutputError, "toPluginOutputError");
-
 // node_modules/@varavel/vdl-plugin-sdk/dist/utils/strings/words.js
 var ACRONYM_TO_CAPITALIZED_WORD_BOUNDARY_RE = /([A-Z]+)([A-Z][a-z])/g;
 var LOWERCASE_OR_DIGIT_TO_UPPERCASE_BOUNDARY_RE = /([a-z0-9])([A-Z])/g;
@@ -180,10 +150,52 @@ function toGoEnumMemberName(value) {
   return escapeGoIdentifier(pascalCase(value));
 }
 __name(toGoEnumMemberName, "toGoEnumMemberName");
+function toGoUnexportedName(value) {
+  return lowerFirst(value);
+}
+__name(toGoUnexportedName, "toGoUnexportedName");
+function lowerFirst(value) {
+  if (value.length === 0) {
+    return value;
+  }
+  const [first, ...rest] = Array.from(value);
+  return first.toLowerCase() + rest.join("");
+}
+__name(lowerFirst, "lowerFirst");
 function escapeGoIdentifier(value) {
   return isGoKeyword(value) ? `${value}_` : value;
 }
 __name(escapeGoIdentifier, "escapeGoIdentifier");
+
+// src/shared/errors.ts
+var _GenerationError = class _GenerationError extends Error {
+  /**
+   * Creates a generation error with an optional VDL source position.
+   */
+  constructor(message, position) {
+    super(message);
+    __publicField(this, "position");
+    this.name = "GenerationError";
+    this.position = position;
+  }
+};
+__name(_GenerationError, "GenerationError");
+var GenerationError = _GenerationError;
+function fail2(message, position) {
+  throw new GenerationError(message, position);
+}
+__name(fail2, "fail");
+function toPluginOutputError(error) {
+  if (error instanceof GenerationError) {
+    return error.position ? { message: error.message, position: error.position } : { message: error.message };
+  }
+  if (error instanceof Error) {
+    const position = error.position;
+    return position ? { message: error.message, position } : { message: error.message };
+  }
+  return { message: "An unknown generation error occurred." };
+}
+__name(toPluginOutputError, "toPluginOutputError");
 
 // src/go/render-go-expr.ts
 function exprUsesSlices(expr) {
@@ -605,9 +617,10 @@ function renderPolicyFunc(policy, typesPrefix, schema) {
   const params = renderParams(policy, typesPrefix);
   const ctx = { schema, typesPrefix };
   const allowGo = renderGoExpr(policy.allow, ctx);
+  const funcName = toGoUnexportedName(policy.goName);
   const lines = [];
   lines.push(...renderDocLines(policy));
-  lines.push(`func ${policy.goName}(${params}) bool {`);
+  lines.push(`func ${funcName}(${params}) bool {`);
   if (policy.deny !== void 0) {
     const denyGo = renderGoExpr(policy.deny, ctx);
     lines.push(`	if ${denyGo} {`);
@@ -633,14 +646,15 @@ __name(renderParams, "renderParams");
 function renderDocLines(policy) {
   var _a4, _b, _c;
   const lines = [];
+  const funcName = toGoUnexportedName(policy.goName);
   if (policy.doc !== void 0 && policy.doc.trim().length > 0) {
     const first = (_b = (_a4 = policy.doc.split("\n")[0]) == null ? void 0 : _a4.trim()) != null ? _b : "";
-    lines.push(`// ${policy.goName} checks the ${policy.name} policy.`);
+    lines.push(`// ${funcName} checks the ${policy.name} policy.`);
     if (first.length > 0) {
       lines.push(`// ${first}`);
     }
   } else {
-    lines.push(`// ${policy.goName} checks the ${policy.name} policy.`);
+    lines.push(`// ${funcName} checks the ${policy.name} policy.`);
   }
   if (policy.isDeprecated) {
     const message = ((_c = policy.deprecationMessage) != null ? _c : "This policy is deprecated.").replace(/\s+/g, " ");
@@ -684,7 +698,7 @@ function renderCatalog(policies, typesPrefix, _schema) {
     lines.push(`		Check func(${params}) bool`);
     lines.push("	}{");
     lines.push(`		Name:  ${JSON.stringify(policy.name)},`);
-    lines.push(`		Check: ${policy.goName},`);
+    lines.push(`		Check: ${toGoUnexportedName(policy.goName)},`);
     lines.push("	},");
   }
   lines.push(

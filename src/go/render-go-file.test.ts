@@ -45,7 +45,7 @@ describe("renderGoFile", () => {
       typesImport: "",
     });
     expect(out).toContain("package policy");
-    expect(out).toContain("func CanAccessPanel(principal User) bool");
+    expect(out).toContain("func canAccessPanel(principal User) bool");
     expect(out).toContain('return (principal.Role == "admin")');
     expect(out).toContain("type VDLPolicyCatalog struct");
     expect(out).toContain("var VDLPolicies = VDLPolicyCatalog{");
@@ -84,7 +84,7 @@ describe("renderGoFile", () => {
       typesImport: "",
     });
     expect(out).toContain("if (principal.Disabled == true) {");
-    expect(out).toContain("Check: CanDo,");
+    expect(out).toContain("Check: canDo,");
   });
 
   it("adds slices import only for ref arrays and types import when set", () => {
@@ -131,7 +131,7 @@ describe("renderGoFile", () => {
     expect(out).toContain('"slices"');
     expect(out).toContain('vdltypes "example.com/project/types"');
     expect(out).toContain(
-      "func CanRead(principal vdltypes.User, resource vdltypes.Invoice) bool",
+      "func canRead(principal vdltypes.User, resource vdltypes.Invoice) bool",
     );
     expect(out).toContain("slices.Contains");
   });
@@ -189,7 +189,7 @@ describe("renderGoFile order", () => {
       typesImport: "",
     });
     const catalogAt = out.indexOf("type VDLPolicyCatalog struct");
-    const funcAt = out.indexOf("func CanAccessPanel(principal User) bool");
+    const funcAt = out.indexOf("func canAccessPanel(principal User) bool");
     expect(catalogAt).toBeGreaterThanOrEqual(0);
     expect(funcAt).toBeGreaterThanOrEqual(0);
     expect(catalogAt).toBeLessThan(funcAt);
