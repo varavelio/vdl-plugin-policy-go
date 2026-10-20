@@ -160,3 +160,38 @@ describe("renderGoFile", () => {
     expect(out).toContain("// Deprecated: Use CanNew.");
   });
 });
+
+describe("renderGoFile order", () => {
+  it("renders the catalog before check functions", () => {
+    const ir = schema({
+      types: [
+        typeDef("User", objectType([field("role", primitiveType("string"))])),
+        typeDef(
+          "CanAccessPanel",
+          objectType([field("principal", namedType("User"))]),
+          {
+            annotations: [
+              annotation(
+                "policy",
+                objectLiteral({
+                  allow: stringLiteral("principal.role == 'admin'"),
+                }),
+              ),
+            ],
+          },
+        ),
+      ],
+    });
+    const policies = collectPolicyModels(ir);
+    const out = renderGoFile(ir, policies, {
+      packageName: "policy",
+      outFile: "policies.go",
+      typesImport: "",
+    });
+    const catalogAt = out.indexOf("type VDLPolicyCatalog struct");
+    const funcAt = out.indexOf("func CanAccessPanel(principal User) bool");
+    expect(catalogAt).toBeGreaterThanOrEqual(0);
+    expect(funcAt).toBeGreaterThanOrEqual(0);
+    expect(catalogAt).toBeLessThan(funcAt);
+  });
+});

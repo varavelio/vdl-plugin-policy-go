@@ -137,6 +137,11 @@ type User {
   disabled bool
 }
 
+type Invoice {
+  ownerId string
+  amount float
+}
+
 @policy({
   version 1
   allow "principal.id == resource.ownerId || has(principal.department) && principal.department == 'Finance'"
@@ -173,10 +178,6 @@ type CanAccessPanel {
 The generated Go output is similar to (comments were reduced for brevity):
 
 ```go
-func CanAccessPanel(principal vdltypes.User) bool {
-  return (principal.Role == "admin")
-}
-
 type VDLPolicyCatalog struct {
   CanAccessPanel struct {
     Name string
@@ -197,14 +198,20 @@ var VDLPolicies = VDLPolicyCatalog{
 func (c VDLPolicyCatalog) Names() []string {
   return []string{"CanAccessPanel"}
 }
+
+func CanAccessPanel(principal vdltypes.User) bool {
+  return (principal.Role == "admin")
+}
 ```
 
-Each function evaluates `deny` first and returns `false` immediately, then returns `allow`. Direct calls are the primary API, the catalog only references the same functions for inventory and dynamic dispatch:
+Each function evaluates `deny` first and returns `false` immediately, then returns `allow`.
+
+Direct calls are the primary API, the catalog only references the same functions for inventory and dynamic dispatch:
 
 ```go
-gen.CanAccessPanel(user)
-gen.VDLPolicies.CanAccessPanel.Check(user)
-gen.VDLPolicies.Names()
+policy.CanAccessPanel(user)
+policy.VDLPolicies.CanAccessPanel.Check(user)
+policy.VDLPolicies.Names()
 ```
 
 ## Type Mapping

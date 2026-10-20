@@ -557,15 +557,15 @@ function renderGoFile(schema, policies, options) {
     }
     lines.push(")", "");
   }
+  if (policies.length > 0) {
+    lines.push(...renderCatalog(policies, typesPrefix, ctx.schema));
+    lines.push("");
+  }
   for (const [index, policy] of policies.entries()) {
     lines.push(...renderPolicyFunc(policy, typesPrefix, ctx.schema));
     if (index < policies.length - 1) {
       lines.push("");
     }
-  }
-  if (policies.length > 0) {
-    lines.push("");
-    lines.push(...renderCatalog(policies, typesPrefix, ctx.schema));
   }
   return `${lines.join("\n")}
 `;
