@@ -1,0 +1,11 @@
+type User {
+  id string
+}
+
+@deprecated("Use CanNew.")
+@policy({
+  allow "true"
+})
+type CanOld {
+  principal User
+}

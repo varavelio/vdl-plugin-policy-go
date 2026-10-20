@@ -1,0 +1,20 @@
+enum InvoiceStatus {
+  Locked
+  Unlocked
+}
+
+type User {
+  id string
+}
+
+type Invoice {
+  status InvoiceStatus
+}
+
+@policy({
+  allow "resource.status == 'Unlocked'"
+})
+type CanPayInvoice {
+  principal User
+  resource Invoice
+}

@@ -1,0 +1,10 @@
+type User {
+  department? string
+}
+
+@policy({
+  allow "has(principal.department)"
+})
+type HasDepartment {
+  principal User
+}

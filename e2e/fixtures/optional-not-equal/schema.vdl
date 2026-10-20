@@ -1,0 +1,10 @@
+type User {
+  department? string
+}
+
+@policy({
+  allow "principal.department != 'Finance'"
+})
+type CanSkipFinance {
+  principal User
+}

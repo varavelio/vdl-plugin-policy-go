@@ -1,0 +1,17 @@
+type Profile {
+  department? string
+}
+
+type User {
+  profile? Profile
+}
+
+@policy({
+  allow "
+    has(principal.profile.department) &&
+    principal.profile.department == 'Finance'
+  "
+})
+type CanAccessFinance {
+  principal User
+}

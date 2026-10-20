@@ -144,7 +144,11 @@ type Invoice {
 
 @policy({
   version 1
-  allow "principal.id == resource.ownerId || has(principal.department) && principal.department == 'Finance'"
+  allow "
+    principal.id == resource.ownerId ||
+    has(principal.department) &&
+    principal.department == 'Finance'
+  "
   deny "principal.disabled == true"
 })
 type CanApproveInvoice {

@@ -1,0 +1,16 @@
+type User {
+  age int
+  score float
+  name string
+}
+
+@policy({
+  allow "
+    principal.age >= 18 &&
+    principal.score > 9.5 &&
+    principal.name > 'M'
+  "
+})
+type CanEnter {
+  principal User
+}

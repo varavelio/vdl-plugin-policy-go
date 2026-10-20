@@ -1,0 +1,14 @@
+type User {
+  role string
+  department? string
+}
+
+@policy({
+  allow "
+    !has(principal.department) ||
+    principal.role == 'admin'
+  "
+})
+type CanView {
+  principal User
+}

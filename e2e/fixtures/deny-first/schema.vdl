@@ -1,0 +1,11 @@
+type User {
+  disabled bool
+}
+
+@policy({
+  allow "true"
+  deny "principal.disabled == true"
+})
+type CanLogin {
+  principal User
+}

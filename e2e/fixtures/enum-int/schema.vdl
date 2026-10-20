@@ -1,0 +1,21 @@
+enum Priority {
+  Low = 0
+  High = 5
+  Urgent = 9
+}
+
+type User {
+  id string
+}
+
+type Ticket {
+  priority Priority
+}
+
+@policy({
+  allow "resource.priority == 5"
+})
+type CanExpedite {
+  principal User
+  resource Ticket
+}

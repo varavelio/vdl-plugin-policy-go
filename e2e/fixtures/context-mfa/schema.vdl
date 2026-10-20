@@ -1,0 +1,29 @@
+type User {
+  id string
+  disabled bool
+}
+
+type Invoice {
+  ownerId string
+}
+
+type SessionContext {
+  mfaVerified bool
+}
+
+@policy({
+  version 1
+  allow "
+    principal.id == resource.ownerId &&
+    context.mfaVerified == true
+  "
+  deny "
+    principal.disabled == true ||
+    context.mfaVerified == false
+  "
+})
+type CanApproveInvoice {
+  principal User
+  resource Invoice
+  context SessionContext
+}

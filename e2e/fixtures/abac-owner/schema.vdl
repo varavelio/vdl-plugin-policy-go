@@ -1,0 +1,15 @@
+type User {
+  id string
+}
+
+type Invoice {
+  ownerId string
+}
+
+@policy({
+  allow "principal.id == resource.ownerId"
+})
+type CanReadInvoice {
+  principal User
+  resource Invoice
+}

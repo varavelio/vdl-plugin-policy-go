@@ -1,0 +1,14 @@
+type User {
+  nickname string
+  code string
+}
+
+@policy({
+  allow "
+    principal.nickname == 'O\\'Neil' ||
+    principal.code == 'a\\\\b'
+  "
+})
+type CanGreet {
+  principal User
+}

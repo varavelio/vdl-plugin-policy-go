@@ -1,0 +1,10 @@
+type User {
+  role string
+}
+
+@policy({
+  allow "principal.role in []"
+})
+type CanNever {
+  principal User
+}

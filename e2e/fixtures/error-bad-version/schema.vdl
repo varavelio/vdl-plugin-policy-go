@@ -1,0 +1,11 @@
+type User {
+  id string
+}
+
+@policy({
+  version 2
+  allow "true"
+})
+type CanBad {
+  principal User
+}

@@ -1,0 +1,16 @@
+type Event {
+  at datetime
+}
+
+type Ctx {
+  now datetime
+}
+
+@policy({
+  allow "resource.at > context.now"
+})
+type CanAttend {
+  principal Event
+  resource Event
+  context Ctx
+}

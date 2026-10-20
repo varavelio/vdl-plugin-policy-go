@@ -1,0 +1,28 @@
+type Window {
+  start datetime
+  end datetime
+}
+
+type Ctx {
+  now datetime
+}
+
+@policy({
+  allow "
+    resource.start <= context.now &&
+    resource.end >= context.now
+  "
+})
+type IsActive {
+  principal Window
+  resource Window
+  context Ctx
+}
+
+@policy({
+  allow "resource.start == resource.end"
+})
+type IsInstant {
+  principal Window
+  resource Window
+}

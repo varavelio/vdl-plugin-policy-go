@@ -1,0 +1,29 @@
+type User {
+  role string
+}
+
+type Invoice {
+  ownerId string
+}
+
+@policy({
+  allow "true"
+})
+type CanZebra {
+  principal User
+}
+
+@policy({
+  allow "principal.role == 'admin'"
+})
+type CanApple {
+  principal User
+}
+
+@policy({
+  allow "principal.role == 'admin'"
+})
+type CanMiddle {
+  principal User
+  resource Invoice
+}

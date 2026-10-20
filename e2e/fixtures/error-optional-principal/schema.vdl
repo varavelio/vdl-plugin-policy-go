@@ -1,0 +1,10 @@
+type User {
+  id string
+}
+
+@policy({
+  allow "true"
+})
+type CanBad {
+  principal? User
+}

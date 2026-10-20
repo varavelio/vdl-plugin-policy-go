@@ -1,0 +1,10 @@
+type User {
+  role string
+}
+
+@policy({
+  allow "principal.missing == 'x'"
+})
+type CanBroken {
+  principal User
+}

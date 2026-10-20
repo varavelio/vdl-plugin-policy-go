@@ -1,0 +1,15 @@
+type User {
+  age int
+  department? string
+}
+
+@policy({
+  allow "
+    has(principal.department) &&
+    principal.department == 'Finance' &&
+    principal.age > 18
+  "
+})
+type CanAccessFinance {
+  principal User
+}

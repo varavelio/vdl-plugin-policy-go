@@ -1,0 +1,10 @@
+type User {
+  age? int
+}
+
+@policy({
+  allow "principal.age > 18"
+})
+type CanEnter {
+  principal User
+}

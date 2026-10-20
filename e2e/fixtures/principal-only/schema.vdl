@@ -1,0 +1,10 @@
+type User {
+  role string
+}
+
+@policy({
+  allow "principal.role == 'admin'"
+})
+type CanAccessPanel {
+  principal User
+}

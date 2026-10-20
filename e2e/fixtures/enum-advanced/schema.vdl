@@ -1,0 +1,26 @@
+enum Role {
+  Admin
+  Owner
+  Viewer
+}
+
+type User {
+  role Role
+}
+
+type Invoice {
+  ownerRole Role
+  allowedRoles Role[]
+}
+
+@policy({
+  allow "
+    principal.role == resource.ownerRole ||
+    principal.role in resource.allowedRoles ||
+    principal.role in ['Admin', 'Owner']
+  "
+})
+type CanAct {
+  principal User
+  resource Invoice
+}

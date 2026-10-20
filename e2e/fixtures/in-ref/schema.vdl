@@ -1,0 +1,15 @@
+type User {
+  id string
+}
+
+type Invoice {
+  allowedIds string[]
+}
+
+@policy({
+  allow "principal.id in resource.allowedIds"
+})
+type CanReadShared {
+  principal User
+  resource Invoice
+}
